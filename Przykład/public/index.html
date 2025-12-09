@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTMX + JWT Demo</title>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="bg-gray-100 font-sans leading-normal tracking-normal min-h-screen flex items-center justify-center text-gray-800"
+  >
+    <div
+      id="main-content"
+      class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md m-4 transition-all duration-300"
+    >
+      <div
+        class="flex justify-center items-center space-x-2 animate-pulse text-gray-400"
+      >
+        Sprawdzanie stanu sesji...
+      </div>
+    </div>
+
+    <!-- SKRYPT OBSŁUGUJĄCY JWT I STAN APLIKACJI -->
+    <script>
+      // Funkcja do ładowania początkowego widoku (wywoływana raz po załadowaniu strony)
+      function loadInitialView() {
+        const token = localStorage.getItem("jwt_token");
+        // Jeśli token istnieje, próbujemy go zweryfikować przez endpoint /api/login-status.
+        // Jeśli nie, ładujemy /login.
+        const targetUrl = token ? "/api/login-status" : "/login";
+
+        // Używamy funkcji htmx.ajax do ręcznego wywołania żądania
+        // Target jest ustawiony na #main-content
+        htmx.ajax("GET", targetUrl, {
+          target: "#main-content",
+          swap: "innerHTML",
+        });
+      }
+
+      // 1. Dodawanie tokena do każdego żądania HTMX
+      document.body.addEventListener("htmx:configRequest", (evt) => {
+        const token = localStorage.getItem("jwt_token");
+        if (token) {
+          evt.detail.headers["Authorization"] = "Bearer " + token;
+        }
+      });
+
+      // 2. Obsługa odpowiedzi: Zapisz token lub go usuń
+      document.body.addEventListener("htmx:afterRequest", (evt) => {
+        const token = evt.detail.xhr.getResponseHeader("X-Auth-Token");
+        if (token) {
+          localStorage.setItem("jwt_token", token);
+        }
+
+        if (evt.detail.xhr.getResponseHeader("X-Logout")) {
+          localStorage.removeItem("jwt_token");
+        }
+      });
+
+      // URUCHOMIENIE APLIKACJI: Ładowanie widoku przy starcie
+      window.onload = loadInitialView;
+    </script>
+  </body>
+</html>
