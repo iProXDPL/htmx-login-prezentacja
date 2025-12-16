@@ -7,6 +7,7 @@ const app = express();
 const PORT = 3000;
 const SECRET_KEY = "super_tajny_klucz_jwt";
 
+
 // Użytkownicy startują z pustą bazą. Wymagana rejestracja.
 const users = [];
 
